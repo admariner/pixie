@@ -29,14 +29,37 @@ namespace obj_tools {
 using ::testing::Field;
 using ::testing::StrEq;
 
-constexpr std::string_view kTestGoBinaryPath =
-    "src/stirling/obj_tools/testdata/go/test_go_1_16_binary";
+constexpr std::string_view kTestGoLittleEndiani386BinaryPath =
+    "src/stirling/obj_tools/testdata/go/test_go1_13_i386_binary";
 
-TEST(ReadBuildVersionTest, WorkingOnBasicGoBinary) {
+constexpr std::string_view kTestGoLittleEndianBinaryPath =
+    "src/stirling/obj_tools/testdata/go/test_go_1_17_binary";
+
+constexpr std::string_view kTestGoBinaryPath =
+    "src/stirling/obj_tools/testdata/go/test_go_1_19_binary";
+
+// The "endian agnostic" case refers to where the Go version data is varint encoded
+// directly within the buildinfo header. See the following reference for more details.
+// https://github.com/golang/go/blob/1dbbafc70fd3e2c284469ab3e0936c1bb56129f6/src/debug/buildinfo/buildinfo.go#L184C16-L184C16
+TEST(ReadGoBuildVersionTest, BuildinfoEndianAgnostic) {
   const std::string kPath = px::testing::BazelRunfilePath(kTestGoBinaryPath);
   ASSERT_OK_AND_ASSIGN(std::unique_ptr<ElfReader> elf_reader, ElfReader::Create(kPath));
-  ASSERT_OK_AND_ASSIGN(std::string version, ReadBuildVersion(elf_reader.get()));
-  EXPECT_THAT(version, StrEq("go1.16.15"));
+  ASSERT_OK_AND_ASSIGN(std::string version, ReadGoBuildVersion(elf_reader.get()));
+  EXPECT_THAT(version, StrEq("go1.19.10"));
+}
+
+TEST(ReadGoBuildVersionTest, BuildinfoLittleEndian) {
+  const std::string kPath = px::testing::BazelRunfilePath(kTestGoLittleEndianBinaryPath);
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<ElfReader> elf_reader, ElfReader::Create(kPath));
+  ASSERT_OK_AND_ASSIGN(std::string version, ReadGoBuildVersion(elf_reader.get()));
+  EXPECT_THAT(version, StrEq("go1.17.13"));
+}
+
+TEST(ReadGoBuildVersionTest, BuildinfoLittleEndiani386) {
+  const std::string kPath = px::testing::BazelRunfilePath(kTestGoLittleEndiani386BinaryPath);
+  ASSERT_OK_AND_ASSIGN(std::unique_ptr<ElfReader> elf_reader, ElfReader::Create(kPath));
+  ASSERT_OK_AND_ASSIGN(std::string version, ReadGoBuildVersion(elf_reader.get()));
+  EXPECT_THAT(version, StrEq("go1.13.15"));
 }
 
 TEST(IsGoExecutableTest, WorkingOnBasicGoBinary) {
@@ -69,6 +92,7 @@ TEST(ElfGolangItableTest, ExtractInterfaceTypes) {
                    Field(&IntfImplTypeInfo::type_name, "*errors.errorString"),
                    Field(&IntfImplTypeInfo::type_name, "*io/fs.PathError"),
                    Field(&IntfImplTypeInfo::type_name, "*internal/poll.DeadlineExceededError"),
+                   Field(&IntfImplTypeInfo::type_name, "internal/poll.errNetClosing"),
                    Field(&IntfImplTypeInfo::type_name, "runtime.errorString"),
                    Field(&IntfImplTypeInfo::type_name, "syscall.Errno"))),
           Pair("sort.Interface", UnorderedElementsAre(Field(&IntfImplTypeInfo::type_name,
