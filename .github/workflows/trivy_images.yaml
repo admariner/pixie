@@ -75,12 +75,12 @@ jobs:
           filename=$(basename "$f")/
           jq --arg id "$filename" '.runs[].automationDetails.id = $id' < tmp > "$f"
         done
-    - uses: github/codeql-action/upload-sarif@1b549b9259bda1cb5ddde3b41741a82a2d15a841  # v3.28.13
+    - uses: github/codeql-action/upload-sarif@f1f6e5f6af878fb37288ce1c627459e94dbf7d01  # v3.30.1
       with:
         sarif_file: sarif/${{ matrix.artifact }}
     # TODO(ddelnano): Remove this check once the operator dependency images are supported.
     # This requires rendering helm templates and requires some additional work.
-    - uses: github/codeql-action/upload-sarif@1b549b9259bda1cb5ddde3b41741a82a2d15a841  # v3.28.13
+    - uses: github/codeql-action/upload-sarif@f1f6e5f6af878fb37288ce1c627459e94dbf7d01  # v3.30.1
       if: ${{ matrix.artifact != 'operator' }}
       with:
         sarif_file: sarif/${{ matrix.artifact }}_deps
